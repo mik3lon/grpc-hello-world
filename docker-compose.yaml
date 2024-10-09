@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - "50051:50051"
+
+  envoy:
+    image: envoyproxy/envoy:v1.22.0
+    container_name: envoy
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "8080:8080" # Exponer puerto 8080 para Envoy
+    depends_on:
+      - server
+
+  nextjs-app:
+    container_name: nextjs-app
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app  # Mount the frontend folder to /app in the container
+      - ./frontend/node_modules:/app/node_modules  # Mount node_modules to the correct path in the container
+    ports:
+      - "3000:3000"  # Expose the app on port 3000
+    environment:
+      NODE_ENV: development  # Set to "production" for production environments
+    command: sh -c "npm install && npm run dev"  # Run the Next.js dev server
